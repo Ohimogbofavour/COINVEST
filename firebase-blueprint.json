@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing balance, profit statistics, referral details, and compliance tier.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "balance": { "type": "number" },
+        "profits": { "type": "number" },
+        "totalWithdrawn": { "type": "number" },
+        "activeInvestmentsAmount": { "type": "number" },
+        "referralsEarned": { "type": "number" },
+        "referralCode": { "type": "string" },
+        "verificationStatus": { "type": "string" },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email", "balance", "profits", "totalWithdrawn", "activeInvestmentsAmount", "referralsEarned", "referralCode", "verificationStatus", "joinedAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Ledger entry tracking user deposits, withdrawals, platform grants, and payouts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" },
+        "details": { "type": "string" },
+        "txHash": { "type": "string" }
+      },
+      "required": ["id", "userId", "type", "amount", "method", "timestamp", "status", "details"]
+    },
+    "Investment": {
+      "title": "Investment",
+      "description": "Active staking contract details allocating capital to premium ROI tiers.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "planId": { "type": "string" },
+        "planName": { "type": "string" },
+        "amount": { "type": "number" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "dailyRoi": { "type": "number" },
+        "durationDays": { "type": "number" },
+        "status": { "type": "string" },
+        "totalEarned": { "type": "number" },
+        "lastClaimDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "planId", "planName", "amount", "startDate", "endDate", "dailyRoi", "durationDays", "status", "totalEarned", "lastClaimDate"]
+    },
+    "Trade": {
+      "title": "Trade",
+      "description": "CFD trading order executed by client or mirrored automatically from expert trades.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "symbol": { "type": "string" },
+        "type": { "type": "string" },
+        "entryPrice": { "type": "number" },
+        "currentPrice": { "type": "number" },
+        "amount": { "type": "number" },
+        "leverage": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "pnl": { "type": "number" },
+        "status": { "type": "string" },
+        "closedPrice": { "type": "number" }
+      },
+      "required": ["id", "userId", "symbol", "type", "entryPrice", "currentPrice", "amount", "leverage", "timestamp", "pnl", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Sovereign investor profiles."
+    },
+    "/users/{userId}/transactions/{txId}": {
+      "schema": "Transaction",
+      "description": "Ledger transaction entries for deposits and withdrawals."
+    },
+    "/users/{userId}/investments/{invId}": {
+      "schema": "Investment",
+      "description": "Staking asset contracts."
+    },
+    "/users/{userId}/trades/{tradeId}": {
+      "schema": "Trade",
+      "description": "Active and closed margin positions."
+    }
+  }
+}

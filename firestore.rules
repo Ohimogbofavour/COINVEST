@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Primitives (Phase 3)
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- Entity Validation Blueprints (Phase 2) ---
+
+    // User shape validator
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'name', 'email', 'balance', 'profits', 'totalWithdrawn', 'activeInvestmentsAmount', 'referralsEarned', 'referralCode', 'verificationStatus', 'joinedAt'])
+        && data.keys().size() == 11
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.email is string && data.email.size() <= 150
+        && data.balance is number
+        && data.profits is number
+        && data.totalWithdrawn is number
+        && data.activeInvestmentsAmount is number
+        && data.referralsEarned is number
+        && data.referralCode is string && data.referralCode.size() <= 20
+        && data.verificationStatus is string && data.verificationStatus.size() <= 50
+        && data.joinedAt is string && data.joinedAt.size() <= 50;
+    }
+
+    // Transaction shape validator
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['id', 'userId', 'type', 'amount', 'method', 'timestamp', 'status', 'details'])
+        && (data.keys().size() == 8 || data.keys().size() == 9) // txHash is optional
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.type is string && data.type.size() <= 50
+        && data.amount is number
+        && data.method is string && data.method.size() <= 100
+        && data.timestamp is string && data.timestamp.size() <= 50
+        && data.status is string && data.status.size() <= 50
+        && data.details is string && data.details.size() <= 300;
+    }
+
+    // Investment shape validator
+    function isValidInvestment(data) {
+      return data.keys().hasAll(['id', 'userId', 'planId', 'planName', 'amount', 'startDate', 'endDate', 'dailyRoi', 'durationDays', 'status', 'totalEarned', 'lastClaimDate'])
+        && data.keys().size() == 12
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.planId is string && data.planId.size() <= 50
+        && data.planName is string && data.planName.size() <= 100
+        && data.amount is number
+        && data.startDate is string && data.startDate.size() <= 50
+        && data.endDate is string && data.endDate.size() <= 50
+        && data.dailyRoi is number
+        && data.durationDays is number
+        && data.status is string && data.status.size() <= 50
+        && data.totalEarned is number
+        && data.lastClaimDate is string && data.lastClaimDate.size() <= 50;
+    }
+
+    // Trade shape validator
+    function isValidTrade(data) {
+      return data.keys().hasAll(['id', 'userId', 'symbol', 'type', 'entryPrice', 'currentPrice', 'amount', 'leverage', 'timestamp', 'pnl', 'status'])
+        && (data.keys().size() == 11 || data.keys().size() == 12) // closedPrice is optional
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.symbol is string && data.symbol.size() <= 50
+        && data.type is string && data.type.size() <= 10
+        && data.entryPrice is number
+        && data.currentPrice is number
+        && data.amount is number
+        && data.leverage is number
+        && data.timestamp is string && data.timestamp.size() <= 50
+        && data.pnl is number
+        && data.status is string && data.status.size() <= 50;
+    }
+
+    // Fortress Rules Matching
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (
+        request.resource.data.id == resource.data.id &&
+        request.resource.data.email == resource.data.email
+      );
+      allow delete: if false;
+
+      match /transactions/{txId} {
+        allow get: if isOwner(userId) && isValidId(txId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(txId) && isValidTransaction(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if isOwner(userId) && isValidId(txId) && isValidTransaction(request.resource.data) && (
+          request.resource.data.userId == userId &&
+          request.resource.data.id == resource.data.id
+        );
+        allow delete: if false;
+      }
+
+      match /investments/{invId} {
+        allow get: if isOwner(userId) && isValidId(invId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(invId) && isValidInvestment(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if isOwner(userId) && isValidId(invId) && isValidInvestment(request.resource.data) && (
+          request.resource.data.userId == userId &&
+          request.resource.data.id == resource.data.id
+        );
+        allow delete: if false;
+      }
+
+      match /trades/{tradeId} {
+        allow get: if isOwner(userId) && isValidId(tradeId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(tradeId) && isValidTrade(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if isOwner(userId) && isValidId(tradeId) && isValidTrade(request.resource.data) && (
+          request.resource.data.userId == userId &&
+          request.resource.data.id == resource.data.id
+        );
+        allow delete: if false;
+      }
+    }
+  }
+}

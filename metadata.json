@@ -1,0 +1,8 @@
+{
+  "name": "Remix: coinvest",
+  "description": "High-fidelity trading, cryptocurrency investment, and asset yield tracking dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
