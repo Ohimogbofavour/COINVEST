@@ -352,7 +352,7 @@ export const AdminPanel: React.FC = () => {
               <div className="bg-[#F4F5F0] text-natural-secondary border border-natural-border rounded-2xl p-3.5 space-y-1.5 text-xs select-none font-semibold">
                 <div className="flex justify-between items-center">
                   <span className="font-mono text-[10px] uppercase font-black text-natural-dark flex items-center gap-1.5">
-                    <span className={`h-2.5 w-2.5 rounded-full ${isSandbox ? 'bg-emerald-600 animate-pulse' : 'bg-blue-600'}`}></span>
+                    <span className={"h-2.5 w-2.5 rounded-full " + (isSandbox ? "bg-emerald-600 animate-pulse" : "bg-blue-600")}></span>
                     Mode: {isSandbox ? 'Local Sandbox' : 'Cloud Firebase'}
                   </span>
                   <span className="text-[9px] bg-natural-dark/5 px-2 py-0.5 rounded font-black font-mono">
