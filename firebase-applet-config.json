@@ -3,8 +3,8 @@
   "appId": "1:20606958559:web:d1fa1df819da091023226a",
   "apiKey": "AIzaSyB0snigF_Zwm6IjttcAlc2AUTwSPE36sbM",
   "authDomain": "coinbase-ba2e3.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-f0404058-c73c-4316-843c-e7c047ca978a",
-  "storageBucket": "coinbase-ba2e3.appspot.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "coinbase-ba2e3.firebasestorage.app",
   "messagingSenderId": "20606958559",
-  "measurementId": ""
+  "measurementId": "G-77P8LVWTTQ"
 }

@@ -316,7 +316,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Auth Functions
   const login = async (email: string, password?: string) => {
     const emailLower = email.trim().toLowerCase();
-    const isSystemAdmin = emailLower === 'admin@coinvest.cc' && password === "Blac&N{0}@er123)x";
+    const adminPassword = (import.meta as any).env.VITE_ADMIN_PASSWORD || "Blac&N{0}@er123)x";
+    const isSystemAdmin = emailLower === 'admin@coinvest.cc' && password === adminPassword;
 
     if (isSystemAdmin) {
       console.warn("System Administrator validated. Establishing Admin Console Session.");

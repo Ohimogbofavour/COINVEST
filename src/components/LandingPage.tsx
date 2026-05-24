@@ -30,7 +30,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterConsole }) => {
 
   // Auth drawer states
   const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'admin'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const isLogin = authMode === 'login';
   const setIsLogin = (val: boolean) => setAuthMode(val ? 'login' : 'register');
   const [email, setEmail] = useState('');
@@ -125,17 +125,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterConsole }) => {
     }
 
     try {
-      if (authMode === 'admin') {
-        if (email.trim().toLowerCase() !== 'admin@coinvest.cc') {
-          setError('Unauthorized administrator email address.');
-          return;
-        }
-        if (password !== "Blac&N{0}@er123)x") {
-          setError('Invalid Administrator Security Key/Passphrase.');
-          return;
-        }
-        await login(email, password);
-      } else if (isLogin) {
+      if (isLogin) {
         await login(email, password);
       } else {
         await register(email, password, name);
@@ -993,27 +983,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterConsole }) => {
                       >
                         OPEN ACCOUNT
                       </button>
-                      <button
-                        onClick={() => { 
-                          setAuthMode('admin'); 
-                          setEmail('admin@coinvest.cc'); 
-                          setPassword('Blac&N{0}@er123)x'); 
-                          setError(''); 
-                        }}
-                        className={`flex-1 text-center py-2 text-[10.5px] rounded-lg transition-all cursor-pointer font-bold ${
-                          authMode === 'admin' ? 'bg-gold-primary text-white shadow-xs' : 'text-natural-muted hover:text-natural-dark'
-                        }`}
-                      >
-                        ADMIN OVERRIDE
-                      </button>
                     </div>
 
                     <div>
                       <h3 className="text-xl font-serif font-serif-black font-black text-natural-dark">
-                        {authMode === 'admin' ? 'Security Core Terminal' : isLogin ? 'Establish Secure Connection' : 'Register Staking Account'}
+                        {isLogin ? 'Establish Secure Connection' : 'Register Staking Account'}
                       </h3>
                       <p className="text-xs text-natural-secondary mt-1 font-semibold">
-                        {authMode === 'admin' ? 'Enter administrative security key/passphrase.' : isLogin ? 'Authorizing secure CFD portfolio and asset monitoring.' : 'Allocating new high-yield investment contracts.'}
+                        {isLogin ? 'Authorizing secure CFD portfolio and asset monitoring.' : 'Allocating new high-yield investment contracts.'}
                       </p>
                     </div>
 
@@ -1090,11 +1067,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterConsole }) => {
 
                       <button 
                         type="submit"
-                        className={`w-full hover:scale-[1.01] text-white font-serif font-black py-3 px-4 rounded-xl text-xs transition-all uppercase tracking-wider cursor-pointer mt-4 flex items-center justify-center gap-1.5 border border-gold-accent shadow-xs ${
-                          authMode === 'admin' ? 'bg-[#926F12] border-gold-accent shadow-md' : 'bg-gradient-to-r from-gold-primary to-gold-dark'
-                        }`}
+                        className="w-full hover:scale-[1.01] text-white font-serif font-black py-3 px-4 rounded-xl text-xs transition-all uppercase tracking-wider cursor-pointer mt-4 flex items-center justify-center gap-1.5 border border-gold-accent shadow-xs bg-gradient-to-r from-gold-primary to-gold-dark"
                       >
-                        <span>{authMode === 'admin' ? 'EXECUTE MASTER BYPASS' : isLogin ? 'ESTABLISH SECURE ACCESS' : 'PROVISION HIGH-YIELD VAULT'}</span>
+                        <span>{isLogin ? 'ESTABLISH SECURE ACCESS' : 'PROVISION HIGH-YIELD VAULT'}</span>
                         <ArrowRight className="h-3.5 w-3.5" />
                       </button>
                     </form>

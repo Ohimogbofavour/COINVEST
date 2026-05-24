@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Solid Dark Platinum Medallion Base to ensure high visibility across both light and dark browser tab modes -->
+  <circle cx="16" cy="16" r="14" fill="#12130F" stroke="#D4AF37" stroke-width="1.5" />
+  
+  <!-- Outer Beaded Security/Asset Ring -->
+  <circle cx="16" cy="16" r="11" fill="none" stroke="#A98A33" stroke-width="0.75" stroke-dasharray="1 1.5" />
+  
+  <!-- Outer Gold 'C' Monogram Arc -->
+  <path d="M20 11.5 C18.8 10.4 17.2 9.8 15.2 9.8 C11.5 9.8 9.0 12.4 9.0 16.0 C9.0 19.6 11.5 22.2 15.2 22.2 C17.2 22.2 18.8 21.6 20 20.5" fill="none" stroke="#D4AF37" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Inner Fine White 'C' Highlight Pinline -->
+  <path d="M18.2 13.5 C17.5 12.9 16.5 12.5 15.4 12.5 C13.3 12.5 11.8 13.9 11.8 16.0 C11.8 18.1 13.3 19.5 15.4 19.5 C16.5 19.5 17.5 19.1 18.2 18.5" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+  
+  <!-- Center Micro-Medallion Star Accent -->
+  <polygon points="16,14.5 16.4,15.4 17.4,15.4 16.6,16.0 16.9,17.0 16,16.4 15.1,17.0 15.4,16.0 14.6,15.4 15.6,15.4" fill="#D4AF37" />
+</svg>

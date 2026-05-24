@@ -63,23 +63,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
         {/* Action icons / Mobile Hamburger */}
         <div className="flex items-center gap-3">
-          {/* Market Trends Icon - Gold Button with Trending Chart */}
-          <button 
-            className="flex items-center justify-center p-2.5 bg-gradient-to-br from-[#D4AF37] via-[#C4A028] to-[#9D7E1F] hover:from-[#E5C158] hover:to-[#B8992F] text-white rounded-xl border border-[#9D7E1F] shadow-lg shadow-[#D4AF37]/30 transition-all hover:shadow-xl hover:shadow-[#D4AF37]/40 group"
-            title="Market Trends"
-          >
-            {/* Trending Up Icon */}
-            <svg className="h-5 w-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-              <polyline points="17 6 23 6 23 12"></polyline>
-            </svg>
-          </button>
-
           {/* Browse Website Trigger */}
           {onBrowseWebsite && (
             <button 
               onClick={onBrowseWebsite}
-              className="flex items-center gap-2 bg-gradient-to-r from-[#FDFDFD] to-[#F5F6F0] hover:from-gold-cream/40 border border-natural-border hover:border-gold-accent px-4 py-2 rounded-xl text-natural-dark font-bold transition-all shadow-xs"
+              className="flex items-center gap-2 bg-gradient-to-r from-[#FDFDFD] to-[#F5F6F0] hover:from-gold-cream/40 border border-natural-border hover:border-gold-accent px-4 py-2 rounded-xl text-xs font-serif font-black text-gold-dark transition-all cursor-pointer shadow-sm select-none"
             >
               <Globe className="h-4 w-4 text-gold-primary animate-pulse-subtle" />
               <span className="tracking-wide uppercase text-[10.5px]">BROWSE HOME</span>
@@ -95,7 +83,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           {/* Logout Trigger */}
           <button 
             onClick={logout}
-            className="hidden sm:flex items-center gap-1.5 bg-white hover:bg-neutral-50 hover:text-red-700 border border-natural-border hover:border-red-200/60 px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-colors shadow-xs"
+            className="hidden sm:flex items-center gap-1.5 bg-white hover:bg-neutral-50 hover:text-red-700 border border-natural-border hover:border-red-200/60 px-4 py-2 rounded-xl text-xs font-extrabold text-[#5A5A40] transition-all cursor-pointer shadow-sm"
           >
             <LogOut className="h-3.5 w-3.5 shrink-0" />
             <span className="uppercase text-[10px] tracking-wider">SECURE LOGOUT</span>
@@ -216,7 +204,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
               </div>
             </div>
             <p className="text-[11.5px] text-gold-light/60 leading-relaxed max-w-md font-semibold font-sans">
-              COINVEST DIGITAL LTD operates as a premier gold-standard institutional portal in the United Kingdom, combining custom client allocation solutions with top tier CFD trading matching, and seamless fund management across multiple asset classes with real-time synchronization.
+              COINVEST DIGITAL LTD operates as a premier gold-standard institutional portal in the United Kingdom, combining custom client allocation solutions with top tier CFD trading matching, arbitrage engines, and capital protection strategies. Authorized and regulated under CRN #103945.
             </p>
           </div>
 
@@ -249,7 +237,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           <div className="flex gap-4 shrink-0 font-semibold">
             <span className="hover:text-white transition-colors cursor-pointer">Security Terms</span>
             <span className="hover:text-white transition-colors cursor-pointer">Liquidity Disclaimers</span>
-            <a href="https://wa.me/19702617338?text=Hello%20Coinvest%20Support%2C%20I%20have%20a%20question%20about%20my%20portfolio." target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp Support</a>
+            <a href="https://wa.me/19702617338?text=Hello%20Coinvest%20Support%2C%20I%20have%20a%20question%20about%20my%20portfolio." target="_blank" rel="noopener noreferrer" className="hover:text-[#FFF] hover:underline transition-colors cursor-pointer">London Support Desk</a>
           </div>
         </div>
       </footer>
