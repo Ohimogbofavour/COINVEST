@@ -69,7 +69,7 @@ export const AuthScreen: React.FC = () => {
       register(email, password, name).catch((err: any) => {
         const msg = err.message || String(err);
         if (msg.includes('operation-not-allowed') || err.code === 'auth/operation-not-allowed') {
-          setError('Email/password registration is currently disabled in your Firebase console. To resolve this, click Firebase Service Diagnostics below and enable the Email/Password Auth Provider.');
+          setError('Email/password registration is currently disabled in your Firebase console. To resolve this, click Firebase Service Diagnostics below and enable the Email/Password Auth Provide[...]
           setShowDiagnostics(true);
         } else {
           setError(msg);
@@ -131,7 +131,7 @@ export const AuthScreen: React.FC = () => {
               Trade and <span className="text-gold-primary">Invest</span> in Global Assets Instantly
             </h2>
             <p className="text-natural-text/80 text-base leading-relaxed mb-10 font-medium">
-              Access hyper-secure Forex trading, high-reward Crypto yield farming, and institutional CFD margin accounts. Backed by London audit desk clearances and ultra-fast liquidity providers.
+              Access hyper-secure Forex trading, high-reward Crypto yield farming, and institutional CFD margin accounts. Backed by London audit desk clearances and ultra-fast liquidity providers[...]
             </p>
 
             <div className="space-y-6">
@@ -187,14 +187,14 @@ export const AuthScreen: React.FC = () => {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="primary@coinvest.cc"
-                          className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placeholder-natural-muted outline-none transition-all font-medium"
+                          className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placeho[...]
                         />
                       </div>
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full bg-natural-primary hover:bg-[#4E4E37] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm mt-6 cursor-pointer"
+                      className="w-full bg-natural-primary hover:bg-[#4E4E37] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-s[...]
                     >
                       <span>Forward Authorization Key</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -233,8 +233,8 @@ export const AuthScreen: React.FC = () => {
                   <button
                     onClick={() => { 
                       setAuthMode('admin'); 
-                      setEmail('admin@coinvest.cc'); 
-                      setPassword('Blac&N{0}@er123)x'); 
+                      setEmail('');
+                      setPassword('');
                       setError(''); 
                     }}
                     className={`flex-1 text-center py-2 text-[10.5px] rounded-lg transition-all cursor-pointer font-bold ${
@@ -250,7 +250,7 @@ export const AuthScreen: React.FC = () => {
                     {authMode === 'admin' ? 'Security Core Terminal' : authMode === 'login' ? 'Welcome Back, Partner' : 'Secure Allocation Gate'}
                   </h3>
                   <p className="text-xs text-natural-secondary font-semibold">
-                    {authMode === 'admin' ? 'Enter administrative security key/passphrase.' : authMode === 'login' ? 'Sign in to monitor yields and CFD margins.' : 'Create an account to begin copy strategies.'}
+                    {authMode === 'admin' ? 'Enter administrative security key/passphrase.' : authMode === 'login' ? 'Sign in to monitor yields and CFD margins.' : 'Create an account to begin cop[...]
                   </p>
                 </div>
 
@@ -271,7 +271,7 @@ export const AuthScreen: React.FC = () => {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="e.g. Sterling Marcus"
-                          className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placeholder-natural-muted outline-none transition-all font-medium"
+                          className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placeho[...]
                         />
                       </div>
                     </div>
@@ -287,7 +287,7 @@ export const AuthScreen: React.FC = () => {
                         required
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@domain.com"
-                        className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placeholder-natural-muted outline-none transition-all font-medium"
+                        className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placehold[...]
                       />
                     </div>
                   </div>
@@ -313,7 +313,7 @@ export const AuthScreen: React.FC = () => {
                         required
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placeholder-natural-muted outline-none transition-all font-medium"
+                        className="w-full bg-[#F4F5F0]/50 border border-natural-border focus:border-natural-primary focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-natural-dark placehold[...]
                       />
                     </div>
                   </div>
@@ -328,7 +328,7 @@ export const AuthScreen: React.FC = () => {
                         className="mt-1 rounded accent-natural-primary h-3.5 w-3.5"
                       />
                       <label htmlFor="agreed" className="text-[10px] text-natural-secondary leading-normal font-semibold">
-                        I confirm my legal age status and accept coinvest's <span className="text-natural-primary underline cursor-pointer hover:text-natural-dark">Segregated Fund Regulations</span> and <span className="text-natural-primary underline cursor-pointer hover:text-natural-dark">CFD Leverage Disclaimers</span>.
+                        I confirm my legal age status and accept coinvest's <span className="text-natural-primary underline cursor-pointer hover:text-natural-dark">Segregated Fund Regulations</sp[...]
                       </label>
                     </div>
                   )}
@@ -359,7 +359,7 @@ export const AuthScreen: React.FC = () => {
                       Sandbox customer profile impersonation has been secured and integrated directly into the administrative workspace panel.
                     </p>
                     <p className="text-[10px] text-amber-800 mt-1 font-bold">
-                      To switch between simulated accounts or edit client portfolios, use the <strong className="underline">⚙️ Admin Console</strong> in the bottom-left corner of your dashboard after logging in.
+                      To switch between simulated accounts or edit client portfolios, use the <strong className="underline">⚙️ Admin Console</strong> in the bottom-left corner of your dashboa[...]
                     </p>
                   </div>
                 </div>
@@ -367,7 +367,7 @@ export const AuthScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleDemoLogin}
-                  className="w-full bg-[#EAECE0] hover:bg-[#D1D3C4]/60 text-natural-dark font-bold py-3 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 border border-natural-border group cursor-pointer"
+                  className="w-full bg-[#EAECE0] hover:bg-[#D1D3C4]/60 text-natural-dark font-bold py-3 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 border bor[...]
                 >
                   <Cpu className="h-4 w-4 text-natural-primary group-hover:rotate-45 transition-transform" />
                   <span>LAUNCH SANDBOX SESSION (GIFT $1,000)</span>
@@ -386,7 +386,7 @@ export const AuthScreen: React.FC = () => {
                     </button>
                     
                     {firebaseError && (
-                      <span className="inline-flex items-center gap-1 text-[9px] text-[#A25050] bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full font-black animate-pulse-subtle uppercase">
+                      <span className="inline-flex items-center gap-1 text-[9px] text-[#A25050] bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full font-black animate-pulse-subtle uppercas[...]
                         ● Offline
                       </span>
                     )}
@@ -414,13 +414,13 @@ export const AuthScreen: React.FC = () => {
                               Error: {firebaseError}
                             </p>
                             <p className="text-[10px] leading-relaxed text-natural-secondary font-medium">
-                              Firestore backend returned a connectivity warning. This happens when the database instance takes a moment to cold-boot or when third-party cookies are blocked by browser iframe settings.
+                              Firestore backend returned a connectivity warning. This happens when the database instance takes a moment to cold-boot or when third-party cookies are blocked by bro[...]
                             </p>
                             <a
                               href="https://console.firebase.google.com/project/gen-lang-client-0088604903/firestore/databases/ai-studio-86c391b1-004e-4800-ac68-38d3c674c0c3/data"
                               target="_blank"
                               referrerPolicy="no-referrer"
-                              className="inline-block bg-[#5A5A40]/10 hover:bg-[#5A5A40]/20 text-[#5A5A40] font-black text-[9px] py-1 px-2.5 rounded border border-[#5A5A40]/20 transition-colors uppercase cursor-pointer"
+                              className="inline-block bg-[#5A5A40]/10 hover:bg-[#5A5A40]/20 text-[#5A5A40] font-black text-[9px] py-1 px-2.5 rounded border border-[#5A5A40]/20 transition-colors u[...]
                             >
                               Verify Firestore Console ↗
                             </a>
@@ -438,14 +438,14 @@ export const AuthScreen: React.FC = () => {
                           <span>Auth Email / Password Provider</span>
                         </div>
                         <p className="text-[10px] leading-relaxed text-natural-secondary font-medium">
-                          By default, Firebase projects require you to enable Email/Password provider dynamically in the cloud console. If you get `auth/operation-not-allowed`, click below to configure:
+                          By default, Firebase projects require you to enable Email/Password provider dynamically in the cloud console. If you get `auth/operation-not-allowed`, click below to con[...]
                         </p>
                         <div className="pt-1">
                           <a
                             href="https://console.firebase.google.com/project/gen-lang-client-0088604903/authentication/providers"
                             target="_blank"
                             referrerPolicy="no-referrer"
-                            className="inline-block bg-[#5A5A40]/10 hover:bg-[#5A5A40]/20 text-[#5A5A40] font-black text-[9px] py-1 px-2.5 rounded border border-[#5A5A40]/20 transition-colors uppercase cursor-pointer"
+                            className="inline-block bg-[#5A5A40]/10 hover:bg-[#5A5A40]/20 text-[#5A5A40] font-black text-[9px] py-1 px-2.5 rounded border border-[#5A5A40]/20 transition-colors upp[...]
                           >
                             Enable Email/Password ↗
                           </a>
