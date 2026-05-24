@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getAnalytics } from 'firebase/analytics'; // Added for analytics support
 import localConfig from '../firebase-applet-config.json';
 
 const env = (import.meta as any).env || {};
@@ -21,6 +22,12 @@ export const db = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestore
   ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
 export const auth = getAuth();
+
+// --- Analytics support (browser only with measurementId defined)
+export let analytics: ReturnType<typeof getAnalytics> | undefined = undefined;
+if (typeof window !== "undefined" && firebaseConfig.measurementId) {
+  analytics = getAnalytics(app);
+}
 
 export const isFirebasePlaceholder = !firebaseConfig.projectId || firebaseConfig.projectId.includes('remixed') || firebaseConfig.apiKey.includes('remixed');
 
