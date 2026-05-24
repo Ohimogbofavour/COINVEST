@@ -20,6 +20,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn() && (request.auth.uid == 'admin_u_sd' || request.auth.token.email == 'admin@coinvest.cc');
+    }
+
     // --- Entity Validation Blueprints (Phase 2) ---
 
     // User shape validator
@@ -90,45 +94,48 @@ service cloud.firestore {
 
     // Fortress Rules Matching
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (
-        request.resource.data.id == resource.data.id &&
-        request.resource.data.email == resource.data.email
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && (
+        isAdmin() || (
+          request.resource.data.id == resource.data.id &&
+          request.resource.data.email == resource.data.email
+        )
       );
-      allow delete: if false;
+      allow delete: if isAdmin();
 
       match /transactions/{txId} {
-        allow get: if isOwner(userId) && isValidId(txId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(txId) && isValidTransaction(request.resource.data) && request.resource.data.userId == userId;
-        allow update: if isOwner(userId) && isValidId(txId) && isValidTransaction(request.resource.data) && (
+        allow get: if (isOwner(userId) || isAdmin()) && isValidId(txId);
+        allow list: if isOwner(userId) || isAdmin();
+        allow create: if (isOwner(userId) || isAdmin()) && isValidId(txId) && isValidTransaction(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if (isOwner(userId) || isAdmin()) && isValidId(txId) && isValidTransaction(request.resource.data) && (
           request.resource.data.userId == userId &&
           request.resource.data.id == resource.data.id
         );
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
 
       match /investments/{invId} {
-        allow get: if isOwner(userId) && isValidId(invId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(invId) && isValidInvestment(request.resource.data) && request.resource.data.userId == userId;
-        allow update: if isOwner(userId) && isValidId(invId) && isValidInvestment(request.resource.data) && (
+        allow get: if (isOwner(userId) || isAdmin()) && isValidId(invId);
+        allow list: if isOwner(userId) || isAdmin();
+        allow create: if (isOwner(userId) || isAdmin()) && isValidId(invId) && isValidInvestment(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if (isOwner(userId) || isAdmin()) && isValidId(invId) && isValidInvestment(request.resource.data) && (
           request.resource.data.userId == userId &&
           request.resource.data.id == resource.data.id
         );
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
 
       match /trades/{tradeId} {
-        allow get: if isOwner(userId) && isValidId(tradeId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(tradeId) && isValidTrade(request.resource.data) && request.resource.data.userId == userId;
-        allow update: if isOwner(userId) && isValidId(tradeId) && isValidTrade(request.resource.data) && (
+        allow get: if (isOwner(userId) || isAdmin()) && isValidId(tradeId);
+        allow list: if isOwner(userId) || isAdmin();
+        allow create: if (isOwner(userId) || isAdmin()) && isValidId(tradeId) && isValidTrade(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if (isOwner(userId) || isAdmin()) && isValidId(tradeId) && isValidTrade(request.resource.data) && (
           request.resource.data.userId == userId &&
           request.resource.data.id == resource.data.id
         );
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
     }
   }

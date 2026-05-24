@@ -45,6 +45,9 @@ interface DashboardContextType {
   adminRejectTransaction: (txId: string) => void;
   triggerMarketTick: () => void;
   verifyAccount: () => void;
+  impersonatedUid: string | null;
+  setImpersonatedUid: (uid: string | null) => void;
+  allUsers: User[];
   switchSandboxUser: (uid: string) => void;
   createSandboxUser: (email: string, name: string) => User;
   deleteSandboxUser: (uid: string) => void;
@@ -131,6 +134,10 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [impersonatedUid, setImpersonatedUid] = useState<string | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+
   // Keep references for stable ticking interval callbacks
   const stateRef = useRef({ user, investments, trades, marketAssets, copyTraders });
   stateRef.current = { user, investments, trades, marketAssets, copyTraders };
@@ -192,16 +199,10 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [trades, user, isSandbox]);
 
-  // Synchronous listeners list to cleanly dispose of on logout / auth states transitions
+  // Load sandbox session from boot if currently set
   useEffect(() => {
-    let unsubUser: (() => void) | null = null;
-    let unsubTransactions: (() => void) | null = null;
-    let unsubInvestments: (() => void) | null = null;
-    let unsubTrades: (() => void) | null = null;
-
-    // Load sandbox session from boot if currently set
-    if (localStorage.getItem('is_sandbox') === 'true') {
-      const currentUid = localStorage.getItem('sandbox_current_uid');
+    if (isSandbox) {
+      const currentUid = localStorage.getItem('sandbox_current_uid') || 'admin_u_sd';
       if (currentUid) {
         const savedUsers = JSON.parse(localStorage.getItem('sandbox_users_db') || '{}');
         const matchedUser = Object.values(savedUsers).find((u: any) => u.id === currentUid) as User | undefined;
@@ -213,105 +214,127 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       }
     }
+  }, [isSandbox]);
 
-    const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      // If sandbox is active, do not bind block responses or clear unless logging out
-      if (localStorage.getItem('is_sandbox') === 'true') {
-        return;
+  // Listen to Auth State Updates
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      setCurrentUser(firebaseUser);
+      if (!firebaseUser) {
+        setImpersonatedUid(null);
       }
+    });
+    return unsubAuth;
+  }, []);
 
-      // Clean previous listeners
-      if (unsubUser) { unsubUser(); unsubUser = null; }
-      if (unsubTransactions) { unsubTransactions(); unsubTransactions = null; }
-      if (unsubInvestments) { unsubInvestments(); unsubInvestments = null; }
-      if (unsubTrades) { unsubTrades(); unsubTrades = null; }
+  // Listen to User data under Firebase Mode
+  useEffect(() => {
+    if (isSandbox) {
+      return;
+    }
 
-      if (firebaseUser) {
-        setIsSandbox(false);
-        localStorage.setItem('is_sandbox', 'false');
-        const uid = firebaseUser.uid;
-        
-        // Subscribe to user doc
-        unsubUser = onSnapshot(doc(db, 'users', uid), async (snapshot) => {
-          if (snapshot.exists()) {
-            setUser(snapshot.data() as User);
-          } else {
-            // Self-healing: if auth details exist but user document isn't populated, create/initialize user document
-            const defaultUser: User = {
-              id: uid,
-              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Member',
-              email: firebaseUser.email || '',
-              balance: 0.00,
-              profits: 0.00,
-              totalWithdrawn: 0.00,
-              activeInvestmentsAmount: 0.00,
-              referralsEarned: 0.00,
-              referralCode: 'PY-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
-              verificationStatus: 'unverified',
-              joinedAt: new Date().toISOString()
-            };
-            try {
-              await setDoc(doc(db, 'users', uid), defaultUser);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.CREATE, `users/${uid}`);
-            }
-          }
-        }, (error) => {
-          handleFirestoreError(error, OperationType.GET, `users/${uid}`);
-        });
+    if (!currentUser) {
+      setUser(null);
+      setTransactions([]);
+      setInvestments([]);
+      setTrades([]);
+      return;
+    }
 
-        // Subscribe to transactions
-        unsubTransactions = onSnapshot(collection(db, 'users', uid, 'transactions'), (snapshot) => {
-          const list: Transaction[] = [];
-          snapshot.forEach(docSnap => {
-            list.push(docSnap.data() as Transaction);
-          });
-          list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-          setTransactions(list);
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, `users/${uid}/transactions`);
-        });
+    const targetUid = impersonatedUid || currentUser.uid;
 
-        // Subscribe to investments
-        unsubInvestments = onSnapshot(collection(db, 'users', uid, 'investments'), (snapshot) => {
-          const list: Investment[] = [];
-          snapshot.forEach(docSnap => {
-            list.push(docSnap.data() as Investment);
-          });
-          setInvestments(list);
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, `users/${uid}/investments`);
-        });
-
-        // Subscribe to trades
-        unsubTrades = onSnapshot(collection(db, 'users', uid, 'trades'), (snapshot) => {
-          const list: Trade[] = [];
-          snapshot.forEach(docSnap => {
-            list.push(docSnap.data() as Trade);
-          });
-          setTrades(list);
-        }, (error) => {
-          handleFirestoreError(error, OperationType.LIST, `users/${uid}/trades`);
-        });
-
+    const unsubUser = onSnapshot(doc(db, 'users', targetUid), async (snapshot) => {
+      if (snapshot.exists()) {
+        setUser(snapshot.data() as User);
       } else {
-        // Logged out state
-        setUser(null);
-        setTransactions([]);
-        setInvestments([]);
-        setTrades([]);
-        setCopyTraders(INITIAL_TRADERS);
+        // Self-healing: if auth details exist but user document isn't populated, create/initialize user document
+        const defaultUser: User = {
+          id: targetUid,
+          name: currentUser.displayName || currentUser.email?.split('@')[0] || 'Member',
+          email: currentUser.email || '',
+          balance: 0.00,
+          profits: 0.00,
+          totalWithdrawn: 0.00,
+          activeInvestmentsAmount: 0.00,
+          referralsEarned: 0.00,
+          referralCode: 'PY-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
+          verificationStatus: 'unverified',
+          joinedAt: new Date().toISOString()
+        };
+        try {
+          await setDoc(doc(db, 'users', targetUid), defaultUser);
+        } catch (err) {
+          console.warn("Self-healing seeding error", err);
+        }
       }
+    }, (error) => {
+      console.warn("User onSnapshot Error:", error);
+    });
+
+    const unsubTransactions = onSnapshot(collection(db, 'users', targetUid, 'transactions'), (snapshot) => {
+      const list: Transaction[] = [];
+      snapshot.forEach(docSnap => {
+        list.push(docSnap.data() as Transaction);
+      });
+      list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setTransactions(list);
+    }, (error) => {
+      console.warn("Transactions onSnapshot Error:", error);
+    });
+
+    const unsubInvestments = onSnapshot(collection(db, 'users', targetUid, 'investments'), (snapshot) => {
+      const list: Investment[] = [];
+      snapshot.forEach(docSnap => {
+        list.push(docSnap.data() as Investment);
+      });
+      setInvestments(list);
+    }, (error) => {
+      console.warn("Investments onSnapshot Error:", error);
+    });
+
+    const unsubTrades = onSnapshot(collection(db, 'users', targetUid, 'trades'), (snapshot) => {
+      const list: Trade[] = [];
+      snapshot.forEach(docSnap => {
+        list.push(docSnap.data() as Trade);
+      });
+      setTrades(list);
+    }, (error) => {
+      console.warn("Trades onSnapshot Error:", error);
     });
 
     return () => {
-      unsubAuth();
-      if (unsubUser) unsubUser();
-      if (unsubTransactions) unsubTransactions();
-      if (unsubInvestments) unsubInvestments();
-      if (unsubTrades) unsubTrades();
+      unsubUser();
+      unsubTransactions();
+      unsubInvestments();
+      unsubTrades();
     };
-  }, []);
+  }, [currentUser, impersonatedUid, isSandbox]);
+
+  // Read all users collection for Administrator Dashboard Directory
+  useEffect(() => {
+    if (isSandbox) {
+      return;
+    }
+    const isAdminUser = currentUser?.email?.toLowerCase() === 'admin@coinvest.cc';
+    if (!isAdminUser) {
+      setAllUsers([]);
+      return;
+    }
+
+    const unsubAllUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const list: User[] = [];
+      snapshot.forEach(docSnap => {
+        list.push(docSnap.data() as User);
+      });
+      setAllUsers(list);
+    }, (error) => {
+      console.warn("Admin Directory allUsers snapshot read failed:", error);
+    });
+
+    return () => {
+      unsubAllUsers();
+    };
+  }, [currentUser, isSandbox]);
 
   // Auth Functions
   const login = async (email: string, password?: string) => {
@@ -322,6 +345,40 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (isSystemAdmin) {
       console.warn("System Administrator validated. Establishing Admin Console Session.");
       sessionStorage.setItem('admin_authenticated', 'true');
+
+      if (!isFirebasePlaceholder) {
+        setIsSandbox(false);
+        localStorage.setItem('is_sandbox', 'false');
+        try {
+          await signInWithEmailAndPassword(auth, emailLower, password || 'admin123');
+          return { success: true };
+        } catch (authErr: any) {
+          if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential' || authErr.code === 'auth/user-disabled') {
+            try {
+              await createUserWithEmailAndPassword(auth, emailLower, password || adminPassword);
+              const adminUser: User = {
+                id: auth.currentUser?.uid || 'admin_u_sd',
+                name: 'System Administrator',
+                email: 'admin@coinvest.cc',
+                balance: 1000000.00,
+                profits: 0.00,
+                totalWithdrawn: 0.00,
+                activeInvestmentsAmount: 0.00,
+                referralsEarned: 0.00,
+                referralCode: 'PY-ADMIN',
+                verificationStatus: 'verified',
+                joinedAt: new Date().toISOString()
+              };
+              await setDoc(doc(db, 'users', adminUser.id), adminUser);
+              return { success: true };
+            } catch (regErr) {
+              console.error("Auto seeding of administrator failed", regErr);
+            }
+          }
+          console.error("Admin sign in failed", authErr);
+        }
+      }
+
       setIsSandbox(true);
       localStorage.setItem('is_sandbox', 'true');
       localStorage.setItem('sandbox_current_uid', 'admin_u_sd');
@@ -346,12 +403,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         localStorage.setItem('sandbox_users_db', JSON.stringify(savedUsers));
       }
 
-      setUser(savedUserIndexDoc => {
-        // Use functional state or just directly return adminUser
-        return adminUser;
-      });
       setUser(adminUser);
-
       setTransactions(JSON.parse(localStorage.getItem(`sandbox_tx_admin_u_sd`) || '[]'));
       setInvestments(JSON.parse(localStorage.getItem(`sandbox_inv_admin_u_sd`) || '[]'));
       setTrades(JSON.parse(localStorage.getItem(`sandbox_trades_admin_u_sd`) || '[]'));
@@ -612,6 +664,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsSandbox(false);
     localStorage.setItem('is_sandbox', 'false');
     localStorage.removeItem('sandbox_current_uid');
+    setImpersonatedUid(null);
+    setAllUsers([]);
     setUser(null);
     setTransactions([]);
     setInvestments([]);
@@ -1289,6 +1343,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isSandbox,
         isFirebasePlaceholder,
         firebaseError,
+        impersonatedUid,
+        setImpersonatedUid,
+        allUsers,
         login,
         register,
         recoverPassword,

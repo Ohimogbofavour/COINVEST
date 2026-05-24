@@ -31,7 +31,10 @@ export const AdminPanel: React.FC = () => {
     createSandboxUser,
     deleteSandboxUser,
     getSandboxUsers,
-    logout
+    logout,
+    impersonatedUid,
+    setImpersonatedUid,
+    allUsers
   } = useDashboard();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -89,14 +92,18 @@ export const AdminPanel: React.FC = () => {
   const pendingTxs = transactions.filter(t => t.status === 'pending');
 
   const refreshUsersList = () => {
-    setUsersList(getSandboxUsers());
+    if (isSandbox) {
+      setUsersList(getSandboxUsers());
+    } else {
+      setUsersList(allUsers);
+    }
   };
 
   useEffect(() => {
     if (isOpen) {
       refreshUsersList();
     }
-  }, [isOpen, user]); // React native refresh on open or if the logged-in profile shifts
+  }, [isOpen, user, allUsers, isSandbox]);
 
   // Active User Adjustments
   const handleUpdateBalance = (e: React.FormEvent) => {
@@ -141,30 +148,32 @@ export const AdminPanel: React.FC = () => {
   };
 
   // Direct edit functions for other user accounts
-  const handleDirectUpdateUser = (uid: string, fields: Partial<User>) => {
-    if (!isSandbox) {
-      alert("Direct ledger writes are locked for Cloud Firestore security rules. IMPERSONATE the user using 'Switch Profile' to commit standard ledger updates!");
-      return;
-    }
-    
+  const handleDirectUpdateUser = async (uid: string, fields: Partial<User>) => {
     try {
-      const savedUsers = JSON.parse(localStorage.getItem('sandbox_users_db') || '{}');
-      const emailKey = Object.keys(savedUsers).find(email => savedUsers[email].id === uid);
-      
-      if (emailKey) {
-        const uProfile = savedUsers[emailKey];
-        const updatedProfile = { ...uProfile, ...fields };
-        savedUsers[emailKey] = updatedProfile;
-        localStorage.setItem('sandbox_users_db', JSON.stringify(savedUsers));
+      if (isSandbox) {
+        const savedUsers = JSON.parse(localStorage.getItem('sandbox_users_db') || '{}');
+        const emailKey = Object.keys(savedUsers).find(email => savedUsers[email].id === uid);
         
-        // If updating the active user email, reflect in context state immediately!
-        if (user.id === uid) {
-          adminUpdateUser(fields);
+        if (emailKey) {
+          const uProfile = savedUsers[emailKey];
+          const updatedProfile = { ...uProfile, ...fields };
+          savedUsers[emailKey] = updatedProfile;
+          localStorage.setItem('sandbox_users_db', JSON.stringify(savedUsers));
+          
+          // If updating the active user email, reflect in context state immediately!
+          if (user.id === uid) {
+            adminUpdateUser(fields);
+          }
+          
+          refreshUsersList();
+        } else {
+          alert("Account match not found in local sandbox storage index.");
         }
-        
-        refreshUsersList();
       } else {
-        alert("Account match not found in local sandbox storage index.");
+        const { doc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        await updateDoc(doc(db, 'users', uid), fields);
+        refreshUsersList();
       }
     } catch (err: any) {
       console.error(err);
@@ -186,7 +195,7 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  const handleCreateUserSubmit = (e: React.FormEvent) => {
+  const handleCreateUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !newName) {
       setUserError('Name and email are required to pre-seed the profile.');
@@ -195,34 +204,69 @@ export const AdminPanel: React.FC = () => {
     setSubmittingUser(true);
     setUserError('');
     try {
-      createSandboxUser(newEmail, newName);
+      if (isSandbox) {
+        createSandboxUser(newEmail, newName);
+      } else {
+        const { doc, setDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        const newUid = 'u_cl_' + Math.random().toString(36).substring(2, 11);
+        const newUser: User = {
+          id: newUid,
+          name: newName,
+          email: newEmail.toLowerCase().trim(),
+          balance: 0.00,
+          profits: 0.00,
+          totalWithdrawn: 0.00,
+          activeInvestmentsAmount: 0.00,
+          referralsEarned: 0.00,
+          referralCode: 'PY-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
+          verificationStatus: 'unverified',
+          joinedAt: new Date().toISOString()
+        };
+        await setDoc(doc(db, 'users', newUid), newUser);
+      }
       setNewEmail('');
       setNewName('');
       refreshUsersList();
-      alert('Simulated customer account registered! Check the card directory below to direct edit fields or switch active profile.');
+      alert(isSandbox ? 'Simulated customer account registered!' : 'New customer profile initialized in Cloud Firestore databases!');
     } catch (err: any) {
-      setUserError(err.message || 'Failed sandbox registration.');
+      setUserError(err.message || 'Failed registration.');
     } finally {
       setSubmittingUser(false);
     }
   };
 
-  const handleDeleteUserClick = (uid: string, email: string) => {
+  const handleDeleteUserClick = async (uid: string, email: string) => {
     const confirmDelete = window.confirm(
-      `DANGER ZONE: DELETE ACCOUNT\nAre you sure you want to permanently erase the simulated account "${email}"?\n\nThis deletes their sandbox profile, list histories, trades and local storage files.`
+      `DANGER ZONE: DELETE ACCOUNT\nAre you sure you want to permanently erase the simulated account "${email}"?`
     );
     if (confirmDelete) {
-      deleteSandboxUser(uid);
-      if (user.id === uid) {
-        const remaining = getSandboxUsers();
-        if (remaining.length > 0) {
-          switchSandboxUser(remaining[0].id);
+      if (isSandbox) {
+        deleteSandboxUser(uid);
+        if (user.id === uid) {
+          const remaining = getSandboxUsers();
+          if (remaining.length > 0) {
+            switchSandboxUser(remaining[0].id);
+          } else {
+            logout();
+          }
         } else {
-          logout();
+          refreshUsersList();
+          setSelectedUserForEdit(null);
         }
       } else {
-        refreshUsersList();
-        setSelectedUserForEdit(null);
+        const { doc, deleteDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        try {
+          await deleteDoc(doc(db, 'users', uid));
+          if (user.id === uid) {
+            setImpersonatedUid(null);
+          }
+          refreshUsersList();
+          setSelectedUserForEdit(null);
+        } catch (err: any) {
+          alert("Erase failed: " + err.message);
+        }
       }
     }
   };
@@ -409,7 +453,11 @@ export const AdminPanel: React.FC = () => {
                       <button
                         onClick={() => {
                           if (window.confirm("CONFIRM RETURN:\nAre you sure you want to exit live client view and return to the master administrator panel?")) {
-                            switchSandboxUser('admin_u_sd');
+                            if (isSandbox) {
+                              switchSandboxUser('admin_u_sd');
+                            } else {
+                              setImpersonatedUid(null);
+                            }
                           }
                         }}
                         className="w-full bg-[#AA8226] text-white hover:bg-[#856317] font-sans font-black py-2 px-3 rounded-lg text-[9.5px] tracking-wider transition-colors cursor-pointer uppercase flex items-center justify-center gap-1.5 shadow-xs"
@@ -705,11 +753,15 @@ export const AdminPanel: React.FC = () => {
                                   onClick={() => {
                                     const confirmSwitch = window.confirm(`CONFIRM PROFILE SWITCH:\nAre you sure you want to swap the running session to log in as:\n\n${u.name} (${u.email})?\nThis updates the loaded balance, trades & ledger.`);
                                     if (confirmSwitch) {
-                                      switchSandboxUser(u.id);
+                                      if (isSandbox) {
+                                        switchSandboxUser(u.id);
+                                      } else {
+                                        setImpersonatedUid(u.id);
+                                      }
                                     }
                                   }}
                                   className="h-7 px-2.5 bg-[#5A5A40] hover:bg-[#4E4E37] text-white text-[9.5px] font-black uppercase rounded-xl flex items-center gap-1 transition-all cursor-pointer"
-                                  title="Instantly sign into this sandbox customer"
+                                  title="Instantly sign into this customer environment"
                                 >
                                   <LogIn className="h-3 w-3" />
                                   <span>Login As</span>
