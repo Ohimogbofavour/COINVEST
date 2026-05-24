@@ -295,7 +295,6 @@ export const AdminPanel: React.FC = () => {
           )}
         </button>
         <span className="bg-[#12120A] text-white text-[9px] font-mono font-black py-1.5 px-3 rounded-xl border border-natural-accent shadow-md opacity-90 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
-          ⚙️ Admin Console
         </span>
       </div>
 
