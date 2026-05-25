@@ -69,6 +69,9 @@ export const AdminPanel: React.FC = () => {
   const [loginError, setLoginError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Pending update timers tracking (10 minute delay before applying changes)
+  const [pendingUpdates, setPendingUpdates] = useState<Map<string, NodeJS.Timeout>>(new Map());
+
   if (!user) return null;
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -105,15 +108,44 @@ export const AdminPanel: React.FC = () => {
     }
   }, [isOpen, user, allUsers, isSandbox]);
 
+  /**
+   * SANDBOX CUSTOMER PROFILE IMPERSONATION
+   * This admin panel allows administrators to test the platform by impersonating sandbox customer accounts.
+   * When logged in with a demo/fallback profile, all data is stored in local browser storage for isolation.
+   * The "Admin Console" (bottom-left gear icon) provides access to:
+   * - Switch between simulated accounts via "Login As" button
+   * - View and edit individual customer portfolios (balance, profits, referrals)
+   * - Manage KYC verification status
+   * - Approve/reject pending transactions
+   * - Create and delete sandbox test accounts
+   * This feature is critical for QA testing and demonstrating platform functionality.
+   */
+
   // Active User Adjustments
   const handleUpdateBalance = (e: React.FormEvent) => {
     e.preventDefault();
     if (balanceInput) {
       const parsed = parseFloat(balanceInput);
-      const isConfirmed = window.confirm(`CONFIRM BALANCE ACTION:\nAre you sure you want to alter the main account balance to $${parsed.toLocaleString()}?`);
+      const isConfirmed = window.confirm(`CONFIRM BALANCE ACTION:\nAre you sure you want to alter the main account balance to $${parsed.toLocaleString()}?\n\n⏱️ Changes will be applied after 10 minutes.`);
       if (isConfirmed) {
-        adminUpdateUser({ balance: parsed });
+        // Clear any existing pending update for balance
+        const existingTimer = pendingUpdates.get('balance');
+        if (existingTimer) clearTimeout(existingTimer);
+        
+        // Set new 10-minute delay (600,000 ms)
+        const timer = setTimeout(() => {
+          adminUpdateUser({ balance: parsed });
+          setPendingUpdates(prev => {
+            const updated = new Map(prev);
+            updated.delete('balance');
+            return updated;
+          });
+          alert(`✓ Balance has been updated to $${parsed.toLocaleString()}`);
+        }, 600000);
+        
+        setPendingUpdates(prev => new Map(prev).set('balance', timer));
         setBalanceInput('');
+        alert(`⏳ Balance update scheduled. It will be applied in 10 minutes.`);
       }
     }
   };
@@ -122,10 +154,26 @@ export const AdminPanel: React.FC = () => {
     e.preventDefault();
     if (profitsInput) {
       const parsed = parseFloat(profitsInput);
-      const isConfirmed = window.confirm(`CONFIRM PROFITS ACTION:\nAre you sure you want to alter the recorded yields profits to $${parsed.toLocaleString()}?`);
+      const isConfirmed = window.confirm(`CONFIRM PROFITS ACTION:\nAre you sure you want to alter the recorded yields profits to $${parsed.toLocaleString()}?\n\n⏱️ Changes will be applied after 10 minutes.`);
       if (isConfirmed) {
-        adminUpdateUser({ profits: parsed });
+        // Clear any existing pending update for profits
+        const existingTimer = pendingUpdates.get('profits');
+        if (existingTimer) clearTimeout(existingTimer);
+        
+        // Set new 10-minute delay (600,000 ms)
+        const timer = setTimeout(() => {
+          adminUpdateUser({ profits: parsed });
+          setPendingUpdates(prev => {
+            const updated = new Map(prev);
+            updated.delete('profits');
+            return updated;
+          });
+          alert(`✓ Profits have been updated to $${parsed.toLocaleString()}`);
+        }, 600000);
+        
+        setPendingUpdates(prev => new Map(prev).set('profits', timer));
         setProfitsInput('');
+        alert(`⏳ Profits update scheduled. It will be applied in 10 minutes.`);
       }
     }
   };
@@ -134,10 +182,26 @@ export const AdminPanel: React.FC = () => {
     e.preventDefault();
     if (rfEarnedInput) {
       const parsed = parseFloat(rfEarnedInput);
-      const isConfirmed = window.confirm(`CONFIRM REFERRAL INCOME ACTION:\nAre you sure you want to alter the client's referral balance to $${parsed.toLocaleString()}?`);
+      const isConfirmed = window.confirm(`CONFIRM REFERRAL INCOME ACTION:\nAre you sure you want to alter the client's referral balance to $${parsed.toLocaleString()}?\n\n⏱️ Changes will be applied after 10 minutes.`);
       if (isConfirmed) {
-        adminUpdateUser({ referralsEarned: parsed });
+        // Clear any existing pending update for referrals
+        const existingTimer = pendingUpdates.get('referrals');
+        if (existingTimer) clearTimeout(existingTimer);
+        
+        // Set new 10-minute delay (600,000 ms)
+        const timer = setTimeout(() => {
+          adminUpdateUser({ referralsEarned: parsed });
+          setPendingUpdates(prev => {
+            const updated = new Map(prev);
+            updated.delete('referrals');
+            return updated;
+          });
+          alert(`✓ Referral earnings have been updated to $${parsed.toLocaleString()}`);
+        }, 600000);
+        
+        setPendingUpdates(prev => new Map(prev).set('referrals', timer));
         setRfEarnedInput('');
+        alert(`⏳ Referral update scheduled. It will be applied in 10 minutes.`);
       }
     }
   };
@@ -283,7 +347,7 @@ export const AdminPanel: React.FC = () => {
       <div className="fixed bottom-6 left-6 z-50 flex items-center gap-2 select-none group">
         <button
           onClick={() => setIsOpen(prev => !prev)}
-          className="h-12 w-12 rounded-full bg-[#5A5A40] border border-natural-accent flex items-center justify-center text-white hover:bg-[#4E4E37] hover:scale-105 shadow-md transition-all duration-300 cursor-pointer animate-pulse"
+          className="h-12 w-12 rounded-full bg-[#5A5A40] border border-natural-accent flex items-center justify-center text-white hover:bg-[#4E4E37] hover:scale-105 shadow-md transition-all durat[...]"
           title="Administrative Controls Portal"
           id="dev-panel-trigger"
         >
@@ -294,7 +358,8 @@ export const AdminPanel: React.FC = () => {
             </span>
           )}
         </button>
-        <span className="bg-[#12120A] text-white text-[9px] font-mono font-black py-1.5 px-3 rounded-xl border border-natural-accent shadow-md opacity-90 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+        <span className="bg-[#12120A] text-white text-[9px] font-mono font-black py-1.5 px-3 rounded-xl border border-natural-accent shadow-md opacity-90 group-hover:opacity-100 transition-opacit[...]">
+          Admin Console
         </span>
       </div>
 
@@ -331,7 +396,7 @@ export const AdminPanel: React.FC = () => {
                   )}
                   <button 
                     onClick={() => setIsOpen(false)}
-                    className="p-1 px-2.5 hover:bg-[#F4F5F0] text-natural-secondary hover:text-natural-dark border border-transparent hover:border-natural-border rounded-lg text-[10px] font-mono font-black uppercase cursor-pointer"
+                    className="p-1 px-2.5 hover:bg-[#F4F5F0] text-natural-secondary hover:text-natural-dark border border-transparent hover:border-natural-border rounded-lg text-[10px] font-mono [...]"
                   >
                     Close
                   </button>
@@ -360,7 +425,7 @@ export const AdminPanel: React.FC = () => {
                           placeholder="••••••••••••••••"
                           value={passwordAttempt}
                           onChange={(e) => setPasswordAttempt(e.target.value)}
-                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2.5 px-4 text-xs text-natural-dark outline-none font-bold placeholder:font-normal"
+                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2.5 px-4 text-xs text-natural-dark [...]"
                           autoFocus
                         />
                         <button
@@ -381,7 +446,7 @@ export const AdminPanel: React.FC = () => {
 
                     <button
                       type="submit"
-                      className="w-full bg-[#5A5A40] hover:bg-[#4E4E37] text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md mt-2 border border-natural-accent flex items-center justify-center gap-2"
+                      className="w-full bg-[#5A5A40] hover:bg-[#4E4E37] text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md mt-2 border [...]"
                     >
                       <LogIn className="h-4 w-4" />
                       <span>Unlock Dev Dashboard</span>
@@ -405,11 +470,11 @@ export const AdminPanel: React.FC = () => {
                 <p className="text-[10.5px] leading-relaxed text-[#7D7F6E]">
                   {isSandbox ? (
                     <span>
-                      Because you logged in using a fallback/demo profile, you are interacting with <strong>Local Browser Storage</strong>. Data is isolated offline here. Balance and customer directory overrides are immediately editable!
+                      Because you logged in using a fallback/demo profile, you are interacting with <strong>Local Browser Storage</strong>. Data is isolated offline here. Balance and customer dir[...]
                     </span>
                   ) : (
                     <span>
-                      You are authenticated in <strong>Cloud Firebase</strong>. Database updates are synced on-screen. To test multiple distinct accounts, register other credentials or swap to sandbox storage falls!
+                      You are authenticated in <strong>Cloud Firebase</strong>. Database updates are synced on-screen. To test multiple distinct accounts, register other credentials or swap to sa[...]
                     </span>
                   )}
                 </p>
@@ -447,7 +512,7 @@ export const AdminPanel: React.FC = () => {
                   {user.email !== 'admin@coinvest.cc' ? (
                     <div className="bg-amber-50 text-amber-900 border border-amber-200 rounded-xl p-3.5 text-[10.5px] leading-relaxed font-semibold space-y-2.5">
                       <span className="block text-amber-850">
-                        🕵️ <strong>IMPERSONATION ACTIVE:</strong> You are currently viewing and editing the portfolio of client <strong className="underline text-natural-dark">{user.name} ({user.email})</strong>.
+                        🕵️ <strong>IMPERSONATION ACTIVE:</strong> You are currently viewing and editing the portfolio of client <strong className="underline text-natural-dark">{user.name} ({[...]}</strong>.
                       </span>
                       <button
                         onClick={() => {
@@ -459,7 +524,7 @@ export const AdminPanel: React.FC = () => {
                             }
                           }
                         }}
-                        className="w-full bg-[#AA8226] text-white hover:bg-[#856317] font-sans font-black py-2 px-3 rounded-lg text-[9.5px] tracking-wider transition-colors cursor-pointer uppercase flex items-center justify-center gap-1.5 shadow-xs"
+                        className="w-full bg-[#AA8226] text-white hover:bg-[#856317] font-sans font-black py-2 px-3 rounded-lg text-[9.5px] tracking-wider transition-colors cursor-pointer upperca[...]"
                       >
                         <LogIn className="h-3 w-3" />
                         <span>Exit & Return to Master Admin</span>
@@ -476,7 +541,7 @@ export const AdminPanel: React.FC = () => {
                     <h5 className="text-[10px] text-natural-muted uppercase font-black tracking-wider font-mono">Engine ticks</h5>
                     <button
                       onClick={triggerMarketTick}
-                      className="w-full bg-[#5A5A40] hover:bg-[#4E4E37] text-white font-black py-2.5 px-4 rounded-xl text-[11px] transition-colors flex items-center justify-center gap-2 border border-natural-accent font-mono cursor-pointer shadow-xs uppercase"
+                      className="w-full bg-[#5A5A40] hover:bg-[#4E4E37] text-white font-black py-2.5 px-4 rounded-xl text-[11px] transition-colors flex items-center justify-center gap-2 border bo[...]"
                     >
                       <RefreshCw className="h-4 w-4 text-white animate-spin-slow" />
                       <span>Trigger Market Interval (+CFD Yields)</span>
@@ -499,7 +564,7 @@ export const AdminPanel: React.FC = () => {
                         {pendingTxs.map((tx) => (
                           <div key={tx.id} className="bg-[#F4F5F0]/65 border border-natural-border p-3 rounded-2xl flex items-center justify-between gap-4 font-semibold">
                             <div className="min-w-0">
-                              <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-md ${tx.type === 'deposit' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}`}>
+                              <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-md ${tx.type === 'deposit' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}`}[...]>
                                 {tx.type}
                               </span>
                               <span className="text-[11px] font-mono text-natural-dark font-black block mt-1.5">${tx.amount.toLocaleString()} ({tx.method})</span>
@@ -508,7 +573,7 @@ export const AdminPanel: React.FC = () => {
                             <div className="flex gap-1 shrink-0">
                               <button
                                 onClick={() => {
-                                  const isConfirmed = window.confirm(`CONFIRM TRANSACTION APPROVAL:\nAre you sure you want to approve this simulated ${tx.type} request of $${tx.amount.toLocaleString()}?\nThis will adjust raw account funds accordingly.`);
+                                  const isConfirmed = window.confirm(`CONFIRM TRANSACTION APPROVAL:\nAre you sure you want to approve this simulated ${tx.type} request of $${tx.amount.toLocaleStr[...]`);
                                   if (isConfirmed) {
                                     adminApproveTransaction(tx.id);
                                   }
@@ -520,7 +585,7 @@ export const AdminPanel: React.FC = () => {
                               </button>
                               <button
                                 onClick={() => {
-                                  const isConfirmed = window.confirm(`CONFIRM TRANSACTION REJECTION:\nAre you sure you want to reject this simulated ${tx.type} request of $${tx.amount.toLocaleString()}?`);
+                                  const isConfirmed = window.confirm(`CONFIRM TRANSACTION REJECTION:\nAre you sure you want to reject this simulated ${tx.type} request of $${tx.amount.toLocaleStr[...]`);
                                   if (isConfirmed) {
                                     adminRejectTransaction(tx.id);
                                   }
@@ -551,10 +616,10 @@ export const AdminPanel: React.FC = () => {
                           placeholder="Overwrite active balance"
                           value={balanceInput}
                           onChange={(e) => setBalanceInput(e.target.value)}
-                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 pl-6 pr-3 text-xs text-natural-dark outline-none font-bold"
+                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 pl-6 pr-3 text-xs text-natural-da[...]"
                         />
                       </div>
-                      <button type="submit" className="bg-[#EAECE0] hover:bg-[#D1D3C4] px-3.5 py-2 text-xs font-black rounded-xl text-natural-dark border border-natural-accent transition-colors uppercase cursor-pointer shrink-0">
+                      <button type="submit" className="bg-[#EAECE0] hover:bg-[#D1D3C4] px-3.5 py-2 text-xs font-black rounded-xl text-natural-dark border border-natural-accent transition-colors u[...]">
                         Set
                       </button>
                     </form>
@@ -569,10 +634,10 @@ export const AdminPanel: React.FC = () => {
                           placeholder="Overwrite yield profits"
                           value={profitsInput}
                           onChange={(e) => setProfitsInput(e.target.value)}
-                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 pl-6 pr-3 text-xs text-natural-dark outline-none font-bold"
+                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 pl-6 pr-3 text-xs text-natural-da[...]"
                         />
                       </div>
-                      <button type="submit" className="bg-[#EAECE0] hover:bg-[#D1D3C4] px-3.5 py-2 text-xs font-black rounded-xl text-natural-dark border border-natural-accent transition-colors uppercase cursor-pointer shrink-0">
+                      <button type="submit" className="bg-[#EAECE0] hover:bg-[#D1D3C4] px-3.5 py-2 text-xs font-black rounded-xl text-natural-dark border border-natural-accent transition-colors u[...]">
                         Set
                       </button>
                     </form>
@@ -587,10 +652,10 @@ export const AdminPanel: React.FC = () => {
                           placeholder="Overwrite referral earnings"
                           value={rfEarnedInput}
                           onChange={(e) => setRfEarnedInput(e.target.value)}
-                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 pl-6 pr-3 text-xs text-natural-dark outline-none font-bold"
+                          className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 pl-6 pr-3 text-xs text-natural-da[...]"
                         />
                       </div>
-                      <button type="submit" className="bg-[#EAECE0] hover:bg-[#D1D3C4] px-3.5 py-2 text-xs font-black rounded-xl text-natural-dark border border-natural-accent transition-colors uppercase cursor-pointer shrink-0">
+                      <button type="submit" className="bg-[#EAECE0] hover:bg-[#D1D3C4] px-3.5 py-2 text-xs font-black rounded-xl text-natural-dark border border-natural-accent transition-colors u[...]">
                         Set
                       </button>
                     </form>
@@ -599,10 +664,10 @@ export const AdminPanel: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleInstantVerificationToggle}
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-black bg-[#F4F5F0] border border-natural-border hover:bg-[#EAECE0] transition-colors text-natural-dark uppercase mt-2 cursor-pointer flex justify-between items-center"
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-black bg-[#F4F5F0] border border-natural-border hover:bg-[#EAECE0] transition-colors text-natural-dark uppercase mt-2 c[...]"
                     >
                       <span>KYC Verification level</span>
-                      <strong className={`px-2 py-0.5 rounded font-black text-[10px] ${user.verificationStatus === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-[#5A5A40]'}`}>
+                      <strong className={`px-2 py-0.5 rounded font-black text-[10px] ${user.verificationStatus === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-[#5A5A40]'}`[...]}>
                         {user.verificationStatus.toUpperCase()}
                       </strong>
                     </button>
@@ -627,20 +692,20 @@ export const AdminPanel: React.FC = () => {
                           placeholder="Client Name"
                           value={newName}
                           onChange={(e) => setNewName(e.target.value)}
-                          className="bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 px-3 text-xs text-natural-dark outline-none font-bold placeholder:font-normal"
+                          className="bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 px-3 text-xs text-natural-dark outline-n[...]"
                         />
                         <input
                           type="email"
                           placeholder="Client Email"
                           value={newEmail}
                           onChange={(e) => setNewEmail(e.target.value)}
-                          className="bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 px-3 text-xs text-natural-dark outline-none font-bold placeholder:font-normal"
+                          className="bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2 px-3 text-xs text-natural-dark outline-n[...]"
                         />
                       </div>
                       <button
                         type="submit"
                         disabled={submittingUser}
-                        className="w-full bg-[#5A5A40] hover:bg-[#4E4E37] text-white py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        className="w-full bg-[#5A5A40] hover:bg-[#4E4E37] text-white py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center ga[...]"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         <span>{submittingUser ? 'Registering...' : 'Instantiate Customer Wallet'}</span>
@@ -648,7 +713,7 @@ export const AdminPanel: React.FC = () => {
                     </form>
                   ) : (
                     <div className="bg-[#F5F2E9]/70 border border-[#EAECE0] p-3 rounded-2xl text-[10px] leading-relaxed text-[#7D7F6E]">
-                      <strong>MOCK MANAGER NOTE:</strong> Customer generation and account-swapping are fully optimized under <strong>Local SandboxFALL</strong>. To explore database switching, log out and sign in using our Sandbox fallback logic.
+                      <strong>MOCK MANAGER NOTE:</strong> Customer generation and account-swapping are fully optimized under <strong>Local SandboxFALL</strong>. To explore database switching, log[...]
                     </div>
                   )}
 
@@ -662,13 +727,13 @@ export const AdminPanel: React.FC = () => {
                       placeholder="Filter accounts by email, name..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2.5 pl-9 pr-4 text-xs text-natural-dark outline-none font-bold placeholder:font-normal"
+                      className="w-full bg-white border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-xl py-2.5 pl-9 pr-4 text-xs text-natural-dark[...]"
                     />
                   </div>
 
                   {/* Switcher & View Profile instructions */}
                   <div className="bg-[#FAF5E6] border border-amber-200 text-amber-950 rounded-xl p-3 text-[10px] leading-relaxed font-semibold">
-                    🤝 <strong>MULTI-PROFILE MANAGEMENT ACTIVE:</strong> Use the list below to manage and switch active client views. Click <strong className="text-amber-900 uppercase font-bold">Login As</strong> to instantly impersonate and view that profile's active portfolio, or click <strong className="text-amber-900 uppercase font-bold">Override Balances</strong> to configure individual ledger records.
+                    🤝 <strong>MULTI-PROFILE MANAGEMENT ACTIVE:</strong> Use the list below to manage and switch active client views. Click <strong className="text-amber-900 uppercase font-bold[...]} to instantly impersonate and view that profile's active portfolio, or click <strong className="text-amber-900 uppercase font-bold">Override Balances</strong> to configure individual ledger records.
                   </div>
 
                   {/* Accounts List */}
@@ -727,7 +792,7 @@ export const AdminPanel: React.FC = () => {
                                 Refs: <strong className="text-amber-800 font-extrabold">${(u.referralsEarned || 0).toLocaleString()}</strong>
                               </div>
                               <div className="bg-[#F4F5F0] px-2 py-1 rounded">
-                                KYC: <strong className={`${u.verificationStatus === 'verified' ? 'text-emerald-800' : u.verificationStatus === 'pending' ? 'text-amber-800' : 'text-rose-805'} font-black`}>
+                                KYC: <strong className={`${u.verificationStatus === 'verified' ? 'text-emerald-800' : u.verificationStatus === 'pending' ? 'text-amber-800' : 'text-rose-805'} font[...]`}>
                                   {u.verificationStatus.toUpperCase()}
                                 </strong>
                               </div>
@@ -738,7 +803,7 @@ export const AdminPanel: React.FC = () => {
                               {/* Direct Audit expand */}
                               <button
                                 onClick={() => handleToggleExpandUser(u)}
-                                className="h-7 px-2.5 border border-natural-accent hover:bg-natural-bg/40 text-[9.5px] font-black text-natural-secondary hover:text-natural-dark rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                                className="h-7 px-2.5 border border-natural-accent hover:bg-natural-bg/40 text-[9.5px] font-black text-natural-secondary hover:text-natural-dark rounded-xl flex it[...]"
                                 title="Audit individual fields directly"
                               >
                                 <Database className="h-3 w-3 text-natural-muted" />
@@ -750,7 +815,7 @@ export const AdminPanel: React.FC = () => {
                               {!isActive && (
                                 <button
                                   onClick={() => {
-                                    const confirmSwitch = window.confirm(`CONFIRM PROFILE SWITCH:\nAre you sure you want to swap the running session to log in as:\n\n${u.name} (${u.email})?\nThis updates the loaded balance, trades & ledger.`);
+                                    const confirmSwitch = window.confirm(`CONFIRM PROFILE SWITCH:\nAre you sure you want to swap the running session to log in as:\n\n${u.name} (${u.email})?\nThis[...]`);
                                     if (confirmSwitch) {
                                       if (isSandbox) {
                                         switchSandboxUser(u.id);
@@ -759,7 +824,7 @@ export const AdminPanel: React.FC = () => {
                                       }
                                     }
                                   }}
-                                  className="h-7 px-2.5 bg-[#5A5A40] hover:bg-[#4E4E37] text-white text-[9.5px] font-black uppercase rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                                  className="h-7 px-2.5 bg-[#5A5A40] hover:bg-[#4E4E37] text-white text-[9.5px] font-black uppercase rounded-xl flex items-center gap-1 transition-all cursor-point[...]"
                                   title="Instantly sign into this customer environment"
                                 >
                                   <LogIn className="h-3 w-3" />
@@ -770,7 +835,7 @@ export const AdminPanel: React.FC = () => {
                               {/* Delete account */}
                               <button
                                 onClick={() => handleDeleteUserClick(u.id, u.email)}
-                                className="h-7 w-7 border border-rose-200 hover:border-rose-450 hover:bg-rose-50/60 rounded-xl flex items-center justify-center transition-all cursor-pointer text-rose-700 shrink-0"
+                                className="h-7 w-7 border border-rose-200 hover:border-rose-450 hover:bg-rose-50/60 rounded-xl flex items-center justify-center transition-all cursor-pointer text-[...]"
                                 title="Erase account records from sandbox"
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -795,7 +860,7 @@ export const AdminPanel: React.FC = () => {
                                         placeholder="Set new balance value"
                                         value={editBalance}
                                         onChange={(e) => setEditBalance(e.target.value)}
-                                        className="w-full bg-[#F4F5F0]/30 border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-lg py-1.5 pl-5 pr-2 text-xs text-natural-dark outline-none font-bold"
+                                        className="w-full bg-[#F4F5F0]/30 border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-lg py-1.5 pl-5 pr-2 [...]"
                                       />
                                     </div>
                                     <button
@@ -803,7 +868,7 @@ export const AdminPanel: React.FC = () => {
                                         if (!editBalance) return;
                                         handleDirectUpdateUser(u.id, { balance: parseFloat(editBalance) });
                                       }}
-                                      className="bg-[#EAECE0] hover:bg-[#D1D3C4] text-[10px] font-black px-2.5 py-1.5 rounded-lg border border-natural-accent text-natural-dark transition-colors cursor-pointer text-center uppercase inline-flex items-center"
+                                      className="bg-[#EAECE0] hover:bg-[#D1D3C4] text-[10px] font-black px-2.5 py-1.5 rounded-lg border border-natural-accent text-natural-dark transition-colors c[...]"
                                     >
                                       Apply
                                     </button>
@@ -819,7 +884,7 @@ export const AdminPanel: React.FC = () => {
                                         placeholder="Set new profits value"
                                         value={editProfits}
                                         onChange={(e) => setEditProfits(e.target.value)}
-                                        className="w-full bg-[#F4F5F0]/30 border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-lg py-1.5 pl-5 pr-2 text-xs text-natural-dark outline-none font-bold"
+                                        className="w-full bg-[#F4F5F0]/30 border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-lg py-1.5 pl-5 pr-2 [...]"
                                       />
                                     </div>
                                     <button
@@ -827,7 +892,7 @@ export const AdminPanel: React.FC = () => {
                                         if (!editProfits) return;
                                         handleDirectUpdateUser(u.id, { profits: parseFloat(editProfits) });
                                       }}
-                                      className="bg-[#EAECE0] hover:bg-[#D1D3C4] text-[10px] font-black px-2.5 py-1.5 rounded-lg border border-natural-accent text-natural-dark transition-colors cursor-pointer text-center uppercase inline-flex items-center"
+                                      className="bg-[#EAECE0] hover:bg-[#D1D3C4] text-[10px] font-black px-2.5 py-1.5 rounded-lg border border-natural-accent text-natural-dark transition-colors c[...]"
                                     >
                                       Apply
                                     </button>
@@ -843,7 +908,7 @@ export const AdminPanel: React.FC = () => {
                                         placeholder="Set new referral value"
                                         value={editReferral}
                                         onChange={(e) => setEditReferral(e.target.value)}
-                                        className="w-full bg-[#F4F5F0]/30 border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-lg py-1.5 pl-5 pr-2 text-xs text-natural-dark outline-none font-bold"
+                                        className="w-full bg-[#F4F5F0]/30 border border-[#D1D3C4] focus:border-natural-primary focus:ring-1 focus:ring-natural-primary rounded-lg py-1.5 pl-5 pr-2 [...]"
                                       />
                                     </div>
                                     <button
@@ -851,7 +916,7 @@ export const AdminPanel: React.FC = () => {
                                         if (!editReferral) return;
                                         handleDirectUpdateUser(u.id, { referralsEarned: parseFloat(editReferral) });
                                       }}
-                                      className="bg-[#EAECE0] hover:bg-[#D1D3C4] text-[10px] font-black px-2.5 py-1.5 rounded-lg border border-natural-accent text-natural-dark transition-colors cursor-pointer text-center uppercase inline-flex items-center"
+                                      className="bg-[#EAECE0] hover:bg-[#D1D3C4] text-[10px] font-black px-2.5 py-1.5 rounded-lg border border-natural-accent text-natural-dark transition-colors c[...]"
                                     >
                                       Apply
                                     </button>
@@ -887,8 +952,8 @@ export const AdminPanel: React.FC = () => {
                 </div>
               )}
             </>
-          )}
-        </div>
+           )}
+         </div>
 
             {/* Footer details */}
             <div className="p-6 border-t border-natural-border bg-natural-bg/40 flex justify-between items-center text-[10px] text-[#8B8D7A] font-bold uppercase font-mono">
