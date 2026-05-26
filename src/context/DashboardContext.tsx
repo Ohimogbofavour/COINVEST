@@ -246,26 +246,31 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const unsubUser = onSnapshot(doc(db, 'users', targetUid), async (snapshot) => {
       if (snapshot.exists()) {
         setUser(snapshot.data() as User);
-      } else {
-        // Self-healing: if auth details exist but user document isn't populated, create/initialize user document
-        const defaultUser: User = {
-          id: targetUid,
-          name: currentUser.displayName || currentUser.email?.split('@')[0] || 'Member',
-          email: currentUser.email || '',
-          balance: 0.00,
-          profits: 0.00,
-          totalWithdrawn: 0.00,
-          activeInvestmentsAmount: 0.00,
-          referralsEarned: 0.00,
-          referralCode: 'PY-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
-          verificationStatus: 'unverified',
-          joinedAt: new Date().toISOString()
-        };
-        try {
-          await setDoc(doc(db, 'users', targetUid), defaultUser);
-        } catch (err) {
-          console.warn("Self-healing seeding error", err);
-        }
+        return;
+      }
+
+      // Self-healing: Firestore reset can remove user docs.
+      // If auth exists, recreate the user document so the UI never hits “user not found”.
+      const defaultUser: User = {
+        id: targetUid,
+        name: currentUser.displayName || currentUser.email?.split('@')[0] || 'Member',
+        email: currentUser.email || '',
+        balance: 0.00,
+        profits: 0.00,
+        totalWithdrawn: 0.00,
+        activeInvestmentsAmount: 0.00,
+        referralsEarned: 0.00,
+        referralCode: 'PY-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
+        verificationStatus: 'unverified',
+        joinedAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(doc(db, 'users', targetUid), defaultUser, { merge: true });
+        // Optimistically set local state immediately (don’t wait for the next snapshot tick)
+        setUser(defaultUser);
+      } catch (err) {
+        console.warn("Self-healing seeding error", err);
       }
     }, (error) => {
       console.warn("User onSnapshot Error:", error);
