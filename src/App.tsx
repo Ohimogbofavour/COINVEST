@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
 import { LandingPage } from './components/LandingPage';
 import { Layout } from './components/Layout';
@@ -74,6 +75,7 @@ export default function App() {
   return (
     <DashboardProvider>
       <DashboardContent />
+      <Analytics />
     </DashboardProvider>
   );
 }
